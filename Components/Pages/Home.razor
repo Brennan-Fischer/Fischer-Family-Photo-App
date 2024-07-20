@@ -1,0 +1,52 @@
+﻿@page "/"
+
+@inject Fischbowl_Project.Data.Services.BlobStorageService BlobStorageService 
+
+<PageTitle>Home</PageTitle>
+
+<h1>Welcome to Fischbowl</h1>
+
+The Fischer Family Photo Album.
+
+@if (imageData != null)
+{
+    <div class="image-container">
+        <img src="@imageBase64" alt="Photo1" class="auto-scale-image" />
+    </div>
+}
+else
+{
+    <p>Loading image...</p>
+}
+
+<style>
+    .image-container {
+        max-width: 100%; /* Ensure the container doesn't exceed its parent's width */
+    }
+
+    .auto-scale-image {
+        max-width: 100%;
+        height: auto;
+        display: block; /* Optional: Removes extra space at the bottom */
+    }
+</style>
+
+@code {
+    private byte[] imageData; // Byte array to hold the image data
+    private string imageBase64; // Base64 string representation of the image
+
+    // Container name and photo name
+    private string containerName = "photos"; // The name of the container
+    private string photoName = "Unprocessed/Photo1.jpg"; // The name and path of the photo within the container
+
+    // Lifecycle method to initialize the component
+    protected override async Task OnInitializedAsync()
+    {
+        // Retrieve the image data from Azure Blob Storage
+        imageData = await BlobStorageService.GetBlobAsync(containerName, photoName);
+
+        // Convert the image data to a Base64 string
+        imageBase64 = $"data:image/png;base64,{Convert.ToBase64String(imageData)}";
+    }
+}
+
