@@ -1,0 +1,39 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main  # Triggers the workflow on push to the main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest  # Specifies the type of runner to use
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2  # Checks out the repository
+
+    - name: Set up .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '6.0.x'  # Specifies the .NET version to use
+
+    - name: Restore dependencies
+      run: dotnet restore  # Restores the dependencies
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore  # Builds the application
+
+    - name: Run tests
+      run: dotnet test --no-build --verbosity normal  # Runs the tests
+
+    - name: Publish
+      run: dotnet publish --configuration Release --no-build --output ./publish  # Publishes the application
+
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2  # Uses the Azure Web Apps Deploy action
+      with:
+        app-name: 'Fischbowl'  # Replace with your Azure Web App name
+        slot-name: 'production'  # Replace with the deployment slot name if any
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ./publish  # Specifies the output directory
