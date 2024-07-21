@@ -40,4 +40,4 @@ jobs:
 
     - name: Inject Azure Blob Storage Connection String
       run: |
-        echo "AZURE_BLOB_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_BLOB_STORAGE_CONNECTION_STRING }}" >> $GITHUB_ENV
+        echo "AZURE_BLOB_CONNECTION_STRING=${{ secrets.AZURE_BLOB_CONNECTION_STRING }}" >> $GITHUB_ENV
