@@ -37,7 +37,5 @@ jobs:
         slot-name: 'production'  # Replace with the deployment slot name if any
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: ./publish  # Specifies the output directory
-
-    - name: Inject Azure Blob Storage Connection String
-      run: |
-        echo "AZURE_BLOB_CONNECTION_STRING=${{ secrets.AZURE_BLOB_CONNECTION_STRING }}" >> $GITHUB_ENV
+      env:
+       AZURE_BLOB_CONNECTION_STRING: ${{ secrets.AZURE_BLOB_CONNECTION_STRING }}  # Add this line to set the environment variable
