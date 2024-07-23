@@ -1,0 +1,49 @@
+﻿@page "/gallery"
+@using Fischbowl_Project.Data.Services
+@inject PhotoService PhotoService
+
+<h3>Photo Gallery</h3>
+
+<form>
+    <label for="person">Person:</label>
+    <input type="text" id="person" @bind="person" />
+
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate" @bind="startDate" />
+
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate" @bind="endDate" />
+
+    <button type="button" @onclick="FilterPhotos">Filter</button>
+</form>
+
+<div class="gallery">
+    @if (photos != null)
+    {
+        @foreach (var photo in photos)
+        {
+            <div class="photo-item">
+                <img src="@photo.BlobUrl" alt="@photo.PhotoName" class="photo" />
+                <p>@photo.PeopleIdentified</p>
+                <p>@photo.DateTaken?.ToString("yyyy-MM-dd")</p>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private string person;
+    private DateTime? startDate;
+    private DateTime? endDate;
+    private List<PhotoMetaData> photos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        photos = await PhotoService.GetPhotosAsync();
+    }
+
+    private async Task FilterPhotos()
+    {
+        photos = await PhotoService.GetPhotosAsync(person, startDate, endDate);
+    }
+}

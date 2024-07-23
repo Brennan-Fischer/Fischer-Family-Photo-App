@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35027.167
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fischbowl_Project", "Fischbowl_Project.csproj", "{05982AB4-65A1-4CD7-8E67-59C67A7FD789}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fischbowl_Project", "Fischbowl_Project.csproj", "{05982AB4-65A1-4CD7-8E67-59C67A7FD789}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
