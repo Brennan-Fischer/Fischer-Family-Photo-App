@@ -40,3 +40,4 @@ jobs:
       env:
         AZURE_BLOB_CONNECTION_STRING: ${{ secrets.AZURE_BLOB_CONNECTION_STRING }}  # Azure Blob Storage connection string
         SQL_CONNECTION_STRING: ${{ secrets.SQL_CONNECTION_STRING }}  # SQL connection string
+        ASPNETCORE_ENVIRONMENT: 'Production'  # Set the environment to Production
