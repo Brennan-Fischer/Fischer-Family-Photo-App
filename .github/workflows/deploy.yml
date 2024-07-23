@@ -38,4 +38,5 @@ jobs:
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: ./publish  # Specifies the output directory
       env:
-       AZURE_BLOB_CONNECTION_STRING: ${{ secrets.AZURE_BLOB_CONNECTION_STRING }}  # Add this line to set the environment variable
+        AZURE_BLOB_CONNECTION_STRING: ${{ secrets.AZURE_BLOB_CONNECTION_STRING }}  # Azure Blob Storage connection string
+        SQL_CONNECTION_STRING: ${{ secrets.SQL_CONNECTION_STRING }}  # SQL connection string
