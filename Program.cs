@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using Azure.Storage.Blobs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Fischbowl_Project
 {
@@ -16,113 +15,83 @@ namespace Fischbowl_Project
     {
         public static void Main(string[] args)
         {
-            CreateHostBuilder(args).Build().Run();
-        }
+            var builder = WebApplication.CreateBuilder(args);
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                })
-                .ConfigureLogging(logging =>
-                {
-                    logging.ClearProviders();
-                    logging.AddConsole();
-                });
-    }
-}
+            // Add services to the container.
+            builder.Services.AddRazorComponents()
+                .AddInteractiveServerComponents();
 
-public class Startup
-{
-    public Startup(IConfiguration configuration)
-    {
-        Configuration = configuration;
-    }
+            // Add authentication state and related services
+            builder.Services.AddCascadingAuthenticationState();
+            builder.Services.AddScoped<IdentityUserAccessor>();
+            builder.Services.AddScoped<IdentityRedirectManager>();
+            builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-    public IConfiguration Configuration { get; }
-
-    public void ConfigureServices(IServiceCollection services)
-    {
-        // Add services to the container.
-        services.AddRazorComponents()
-            .AddInteractiveServerComponents();
-
-        // Add authentication state and related services
-        services.AddCascadingAuthenticationState();
-        services.AddScoped<IdentityUserAccessor>();
-        services.AddScoped<IdentityRedirectManager>();
-        services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
-
-        // Configure authentication schemes
-        services.AddAuthentication(options =>
-        {
-            options.DefaultScheme = IdentityConstants.ApplicationScheme;
-            options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-        })
-            .AddIdentityCookies();
-
-        // Configure Entity Framework and the database connection string
-        var connectionString = Environment.GetEnvironmentVariable("SQL_CONNECTION_STRING") ?? throw new InvalidOperationException("SQL connection string not found.");
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(connectionString));
-        services.AddDatabaseDeveloperPageExceptionFilter();
-
-        // Configure Identity services
-        services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-            .AddEntityFrameworkStores<ApplicationDbContext>()
-            .AddSignInManager()
-            .AddDefaultTokenProviders();
-
-        // Configure email sender (No-op implementation)
-        services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
-
-        // Register BlobStorageService with the connection string from environment variables
-        services.AddScoped(sp =>
-        {
-            // Get the Azure Blob Storage connection string from environment variables
-            var blobConnectionString = Environment.GetEnvironmentVariable("AZURE_BLOB_CONNECTION_STRING");
-            // Ensure the connection string is not null or empty
-            if (string.IsNullOrEmpty(blobConnectionString))
+            // Configure authentication schemes
+            builder.Services.AddAuthentication(options =>
             {
-                throw new InvalidOperationException("Azure Blob Storage connection string not found in environment variables.");
+                options.DefaultScheme = IdentityConstants.ApplicationScheme;
+                options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+            })
+                .AddIdentityCookies();
+
+            // Pulling SQL connection string for PhotoMetadatafrom visual studio or github secret environment variable
+            var sqlConnectionString = Environment.GetEnvironmentVariable("SQL_CONNECTION_STRING"); 
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlServer(sqlConnectionString));
+            builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+            // Configure Identity services
+            builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddSignInManager()
+                .AddDefaultTokenProviders();
+
+            // Configure email sender (No-op implementation)
+            builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+
+            // Pulling Azure Blob Storage connection string from visual studio or github secret environment variable
+            var blobConnectionString = Environment.GetEnvironmentVariable("AZURE_BLOB_CONNECTION_STRING");
+
+            // Register BlobStorageService with the connection string
+            builder.Services.AddScoped(sp => new BlobStorageService(blobConnectionString));
+
+            // Register the PhotoService with the hardcoded SQL connection string and BlobStorageService
+            builder.Services.AddScoped<PhotoService>(sp =>
+            {
+                var blobStorageService = sp.GetRequiredService<BlobStorageService>();
+                return new PhotoService(sqlConnectionString, blobStorageService);
+            });
+
+            // Build the application
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseMigrationsEndPoint(); // Use migrations endpoint in development environment
             }
-            // Return a new instance of BlobStorageService with the connection string
-            return new BlobStorageService(blobConnectionString);
-        });
+            else
+            {
+                app.UseExceptionHandler("/Error"); // Use exception handler in production environment
+                app.UseHsts(); // Use HTTP Strict Transport Security (HSTS) in production
+            }
 
-        // Register the PhotoService with the SQL connection string and BlobStorageService
-        services.AddScoped<PhotoService>(sp =>
-        {
-            var sqlConnectionString = Environment.GetEnvironmentVariable("SQL_CONNECTION_STRING");
-            var blobStorageService = sp.GetRequiredService<BlobStorageService>();
-            return new PhotoService(sqlConnectionString, blobStorageService);
-        });
-    }
+            app.UseHttpsRedirection(); // Redirect HTTP requests to HTTPS
 
-    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-    {
-        if (env.IsDevelopment())
-        {
-            app.UseDeveloperExceptionPage();
+            app.UseStaticFiles(); // Serve static files
+
+            app.UseAntiforgery(); // Use antiforgery token
+
+            // Map Razor components to the app
+            app.MapRazorComponents<App>()
+                .AddInteractiveServerRenderMode();
+
+            // Add additional endpoints required by the Identity /Account Razor components.
+            app.MapAdditionalIdentityEndpoints();
+
+            // Run the application
+            app.Run();
         }
-        else
-        {
-            app.UseExceptionHandler("/Error");
-            app.UseHsts();
-        }
-
-        app.UseHttpsRedirection();
-        app.UseStaticFiles();
-        app.UseRouting();
-        app.UseAuthentication();
-        app.UseAuthorization();
-
-        app.UseEndpoints(endpoints =>
-        {
-            endpoints.MapRazorPages();
-            endpoints.MapControllers();
-            endpoints.MapFallbackToPage("/_Host");
-        });
     }
 }

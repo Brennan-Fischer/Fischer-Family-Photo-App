@@ -30,7 +30,8 @@ namespace Fischbowl_Project.Data.Services
             using (SqlConnection conn = new SqlConnection(_sqlConnectionString))
             {
                 await conn.OpenAsync();
-                string query = "SELECT PeopleIdentified, PhotoName, BlobUrl, DateTaken FROM PhotoMetaData WHERE 1=1";
+                string query = "SELECT PeopleIdentified, PhotoName, DateTaken FROM PhotoMetaData WHERE 1=1";
+
                 if (!string.IsNullOrEmpty(person))
                 {
                     query += " AND PeopleIdentified LIKE @Person";
@@ -63,15 +64,16 @@ namespace Fischbowl_Project.Data.Services
                     {
                         while (await reader.ReadAsync())
                         {
-                            var photoName = reader.GetString(1);
-                            var blobUrl = _blobStorageService.GetBlobSasUrl("photos", photoName); // Assuming photos are stored in the 'photos' container
+                            var photoName = "Processed/"+reader.GetString(1);
+                            var blobBytes = await _blobStorageService.GetBlobAsync("photos", photoName);
+                            var blobUrl = $"data:image/jpeg;base64,{Convert.ToBase64String(blobBytes)}";
 
                             photos.Add(new PhotoMetaData
                             {
                                 PeopleIdentified = reader.GetString(0),
                                 PhotoName = photoName,
                                 BlobUrl = blobUrl,
-                                DateTaken = reader.IsDBNull(3) ? (DateTime?)null : reader.GetDateTime(3)
+                                DateTaken = reader.IsDBNull(2) ? (DateTime?)null : reader.GetDateTime(2)
                             });
                         }
                     }

@@ -1,8 +1,12 @@
-﻿@page "/gallery"
+﻿@page "/album"
 @using Fischbowl_Project.Data.Services
 @inject PhotoService PhotoService
+@rendermode InteractiveServer
 
-<h3>Photo Gallery</h3>
+<h3>Photo Album</h3>
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
 
 <form>
     <label for="person">Person:</label>
@@ -17,7 +21,7 @@
     <button type="button" @onclick="FilterPhotos">Filter</button>
 </form>
 
-<div class="gallery">
+<div class="album">
     @if (photos != null)
     {
         @foreach (var photo in photos)
@@ -45,5 +49,12 @@
     private async Task FilterPhotos()
     {
         photos = await PhotoService.GetPhotosAsync(person, startDate, endDate);
+    }
+
+    private int currentCount = 0;
+
+    private void IncrementCount()
+    {
+        currentCount++;
     }
 }
