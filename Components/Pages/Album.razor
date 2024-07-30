@@ -4,9 +4,6 @@
 @rendermode InteractiveServer
 
 <h3>Photo Album</h3>
-<p role="status">Current count: @currentCount</p>
-
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
 
 <form>
     <label for="person">Person:</label>
@@ -22,12 +19,16 @@
 </form>
 
 <div class="album">
-    @if (photos != null)
+    @if (photos == null)
+    {
+        <p>Loading photos...</p>
+    }
+    else
     {
         @foreach (var photo in photos)
         {
             <div class="photo-item">
-                <img src="@photo.BlobUrl" alt="@photo.PhotoName" class="photo" />
+                <img src="@photo.BlobUrl" alt="@photo.PhotoName" class="photo" loading="lazy" />
                 <p>@photo.PeopleIdentified</p>
                 <p>@photo.DateTaken?.ToString("yyyy-MM-dd")</p>
             </div>
@@ -40,18 +41,27 @@
     private DateTime? startDate;
     private DateTime? endDate;
     private List<PhotoMetaData> photos;
+    private int currentCount = 0;
 
     protected override async Task OnInitializedAsync()
     {
-        photos = await PhotoService.GetPhotosAsync();
+        // Initial data load deferred to OnAfterRenderAsync
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            photos = await PhotoService.GetPhotosAsync();
+            StateHasChanged();
+        }
     }
 
     private async Task FilterPhotos()
     {
         photos = await PhotoService.GetPhotosAsync(person, startDate, endDate);
+        StateHasChanged();
     }
-
-    private int currentCount = 0;
 
     private void IncrementCount()
     {
