@@ -51,7 +51,7 @@ namespace Fischbowl_Project
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
             // Pulling Azure Blob Storage connection string from visual studio or github secret environment variable
-            var blobConnectionString = "DefaultEndpointsProtocol=https;AccountName=fischbowlstorage;AccountKey=4SO26N5413ECNL33iSCjJTxKDCWjiXhAdwprH0ARcUPLvj8KfrFCfaTELwCG7tHat/CI40guJEYf+AStzDg7bg==;EndpointSuffix=core.windows.net";
+            var blobConnectionString = Environment.GetEnvironmentVariable("AZURE_BLOB_CONNECTION_STRING");
 
             // Register BlobStorageService with the connection string
             builder.Services.AddScoped(sp => new BlobStorageService(blobConnectionString));
